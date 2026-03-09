@@ -1,3 +1,15 @@
+### app.METHOD(route, (req, res))
+
+* request
+    - .body
+    - .params
+    - .query
+* response
+    - .sendStatus()
+    - .send()
+    - .status()
+
+
 ### GET route
 
 - for getting values, or read operations
@@ -32,7 +44,7 @@
 
 ### PATCH request
 
-- updates a record partially
+- updates an existing record (and only existing properties) partially
 
 
 
