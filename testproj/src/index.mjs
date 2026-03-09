@@ -1,14 +1,16 @@
 import express, { request, response } from 'express';
+import { query, validationResult, body, checkSchema, check} from 'express-validator';
+import { createUserValidationSchema } from "../utils/checkSchema.js"; 
 
 const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 const mock_users = [
-    {id : 101, name : "Stephen", gender : "male"},
-    {id : 104, name : "Stephen", gender : "male"},
-    {id : 103, name : "Stephen", gender : "male"},
-    {id : 102, name : "Stephenie", gender : "female"},
+    {id : 101, name : "stephen", gender : "male"},
+    {id : 102, name : "suvi", gender : "female"},
+    {id : 103, name : "monchi", gender : "male"},
+    {id : 104, name : "bnoy", gender : "female"},
 ];
 
 // middleware for logging website access in console
@@ -49,28 +51,37 @@ app.get('/', helloMiddleware, loggingMiddleware, (request, response) => {
 });
 
 
-app.get('/api/users', (request, response)=> {
-    console.log(request.query);
+app.get('/api/users',
+    [
+        query("filter")
+        .notEmpty().withMessage("u must filter something")
+        .isLength({ min: 2, max: 10 }).withMessage("length of filter type is only between 2 and 5"),
+        query("value")
+        .notEmpty().withMessage("filter must have a value")
+        .isLength({min:3, max: 10}).withMessage("value must be between 3 and 10 chars only")
+    ],
+    (request, response) => {
+        // validating the query
+        const result = validationResult(request);
+        if(!result.isEmpty()) return response.status(400).send(result);
 
-    // destructuring the query given by request
-    const filter = request.query.filter;
-    const value = request.query.value;
-    
+        // destructuring the query given by request
+        const { query: { filter, value } } = request;
 
-    // handling misisng key=value pairs
-    if(filter && value){
-        const filteredUsers = mock_users.filter((element) => element[filter].includes(value) );
-        response.status(200).send(filteredUsers);
-    } else {
-        // return all users if no queryy
+        // handling misisng key=value pairs
+        if(filter && value){
+            const filteredUsers = mock_users.filter((element) => {
+                return String(element[filter]).includes(value);
+            } );
+            return response.status(200).send(filteredUsers);
+        }
+        // return all users if no query
         return response.status(200).send(mock_users);
-    }
+    });
 
-    console.log(`filter by: ${filter}`);
-    console.log(`value: ${value}`);
-});
-
-app.get('/api/users/:id', userIdValidator, (request, response)=>{
+app.get('/api/users/:id',
+    userIdValidator,
+    (request, response) => {
     const { userIndexById } = request;
     // find user
     const findUser = mock_users[userIndexById];
@@ -79,19 +90,25 @@ app.get('/api/users/:id', userIdValidator, (request, response)=>{
 });
 
 
-app.post('/api/users', (request, response)=>{
-    
-    // detsructuring the body
-    const name = request.body.name;
-    const gender =  request.body.gender;
+app.post('/api/users', checkSchema(createUserValidationSchema),    
+    (request, response) => {
+        // accessing the body validator
+        const result = validationResult(request);
+        console.log(result);
+        // validator if there are errors within the validationResult
+        if(!result.isEmpty()) return response.status(400).send(result);
 
-    // appending to the array of users
-    const nextIdOfArray = mock_users[mock_users.length - 1].id + 1; 
-    const newUser = {id: nextIdOfArray, name: name, gender: gender};
-    mock_users.push(newUser);
+        // detsructuring the body
+        const name = request.body.name;
+        const gender =  request.body.gender;
 
-    console.log(`added new user: ${newUser}`);
-    return response.status(201).send(newUser);
+        // appending to the array of users
+        const nextIdOfArray = mock_users[mock_users.length - 1].id + 1; 
+        const newUser = {id: nextIdOfArray, name: name, gender: gender};
+        mock_users.push(newUser);
+
+        console.log(`added new user: ${newUser}`);
+        return response.status(201).send(newUser);
 });
 
 
