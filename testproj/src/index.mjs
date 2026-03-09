@@ -11,7 +11,40 @@ const mock_users = [
     {id : 102, name : "Stephenie", gender : "female"},
 ];
 
-app.get('/', (request, response) => {
+// middleware for logging website access in console
+// next: is the function preceding the middleware function
+const loggingMiddleware = (request, response, next) => {
+    console.log(`${request.method} - ${request.url}`);
+    next();
+};
+
+const helloMiddleware = (req, res, next) => {
+    console.log("hello this is a middleware that says hello!");
+    next();
+}
+
+// middleware for handling user id
+const userIdValidator = (request, response, next) => {
+    const { params:{ id } } = request;
+
+    // validate if its a num
+    const parsedId = parseInt(id);
+    if(isNaN(parsedId)) return response.status(400).send("id must be an INT");
+    // validate if id exists
+    const userIndexById = mock_users.findIndex((user) => user.id === parsedId);
+    if(userIndexById === -1) return response.status(400).send("user doesnt exist");
+    
+    // pass to next middleware
+    request.userIndexById = userIndexById;
+    next();
+}
+
+
+// for global use
+// app.use(loggingMiddleware);
+
+// individual middleware func
+app.get('/', helloMiddleware, loggingMiddleware, (request, response) => {
     response.status(200).send("welcome to my site!");
 });
 
@@ -37,23 +70,10 @@ app.get('/api/users', (request, response)=> {
     console.log(`value: ${value}`);
 });
 
-app.get('/api/users/:id', (request, response)=>{
-    const id = request.params.id;
-    
-    // id validations (if its an INT)
-    const parsedId = parseInt(id);
-    console.log(parsedId);
-    if(isNaN(parsedId)){
-        return response.status(400).send({msg: "bad request"});
-    }   
-
-    
-    // id existance checker
-    const findUser = mock_users.find((user) => user.id === parsedId);
-    if(!findUser){
-        return response.status(400).send("user doesnt exist");
-    }
-
+app.get('/api/users/:id', userIdValidator, (request, response)=>{
+    const { userIndexById } = request;
+    // find user
+    const findUser = mock_users[userIndexById];
     // id details returner
     return response.status(200).send(findUser);
 });
@@ -75,24 +95,42 @@ app.post('/api/users', (request, response)=>{
 });
 
 
-app.put('/api/users/:id', (request, response) => {
-    // destructuring params and body
-    const id = request.params.id;
-    const parsedId = parseInt(id);
-    const body = request.body;
-
-    // finding the user
-    const userIndexById = mock_users.findIndex((element) => element.id === parsedId); 
-    console.log(userIndexById);
-
-    // condition if not found
-    if(userIndexById === -1){ return response.status(400).send(); }
+app.put('/api/users/:id', userIdValidator, (request, response) => {
+    const { userIndexById, body } = request;
 
     // update
-    mock_users[userIndexById] = {id:parsedId, ...body};
+    mock_users[userIndexById] = {id:mock_users[userIndexById].id, ...body};
     console.log(mock_users[userIndexById]);
 
     return response.sendStatus(200);
+});
+
+app.patch("/api/users/:id", userIdValidator, (request, response)=>{
+    const { userIndexById, body } = request;
+
+    // final phase: modifying the array index
+    mock_users[userIndexById] = {...mock_users[userIndexById], ...body};
+    console.log(mock_users[userIndexById]);
+
+    return response.status(200).send(body);
+});
+
+app.delete('/api/users/:id', (request, response)=>{
+    const { params: { id },
+            body
+          } = request;
+    
+    // validate id
+    const parsedId = parseInt(id);
+    if(isNaN(parsedId)) return response.sendStatus(400);
+
+    // validate id existence
+    const userIndexById = mock_users.findIndex((user) => user.id === parsedId);
+    if(userIndexById === -1) return response.sendStatus(400);
+
+    // final phase: remove element with matching id from the array
+    mock_users.splice(userIndexById, 1);
+    return response.status(200).send("success deletion");
 });
 
 console.log("Server file loaded");
