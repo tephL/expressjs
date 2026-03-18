@@ -60,9 +60,9 @@
 ## Params 
 
     1. Route
-    + `.get('/abc/:id')`
-    - specific values
+        + `.get('/abc/:id')`
+        - specific values
 
     2. Query 
-    + `abcd.com/users?key=value`
-    - filtering, sorting, searching
+        + `abcd.com/users?key=value`
+        - filtering, sorting, searching
