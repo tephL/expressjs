@@ -1,24 +1,28 @@
 import { mock_products } from "./constants.mjs";
+import { validationResult } from "express-validator"; 
 
-export function iceCreamDataValidator(req, res, next){
-    let { body: {name, price} } = req;
+
+// =============== DEPRECATED: used express-validator schema instead
+// export function newDataValidator(req, res, next){
+//     let { body: {name, price} } = req;
     
-    // name must be string
-    if(!typeof name == "string"){
-        return res.status(400).send({
-            message: "Please input a valid name"
-        });
-    }
-    // price must be integer/double
-    if(isNaN(price)){
-        return res.status(400).send({
-            message: "Price must be a number"
-        });
-    }
-    req.body.price = Number(price);
+//     // name must be string
+//     if(typeof name !== "string"){
+//         return res.status(400).send({
+//             message: "Please input a valid name"
+//         });
+//     }
 
-    next();
-}
+//     // price must be integer/double
+//     if(isNaN(price)){
+//         return res.status(400).send({
+//             message: "Price must be a number"
+//         });
+//     }
+//     req.body.price = Number(price);
+
+//     next();
+// }
 
 
 export function doesIdExist(req, res, next){
@@ -32,9 +36,52 @@ export function doesIdExist(req, res, next){
     // does id exist + assignment of index
     let index_of_id = mock_products.findIndex(mock_product => id == mock_product.id);
     if(index_of_id == -1) return res.status(400).send({
-        message:"User with that id doesnt exist."
+        message:"Product ID doesn't exist."
     });
 
-    req.body.foundIndex = index_of_id;
+    req.context = {
+        foundIndex: index_of_id
+    }
+    next();
+}
+
+
+export const updateDataValidator = (req, res, next) => {
+    let { name, price } = req.body;
+    
+    // price number
+    if(price && isNaN(price)){
+        return res.status(400).send({
+            message: "Price must be a number."
+        });
+    }
+
+    // name string
+    if(name && typeof name !== "string"){
+        return res.status(400).send({
+            message: "Please input a valid name"
+        });
+    }
+    next();
+}
+
+
+export function handleValidationErrors(req, res, next){
+    const result = validationResult(req);
+    if(!result.isEmpty()){
+        return res.status(400).send(result.array());
+    };
+
+    next();
+} 
+
+
+export function transformDataProperly(req, res, next){
+    const { id, name, price } = req.body;
+
+    // format price properly
+    if(id) req.body.id = Number(id);
+    req.body.price = Number(price);
+    
     next();
 }

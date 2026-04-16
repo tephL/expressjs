@@ -1,11 +1,18 @@
 import Router from 'express';
 import { mock_products } from '../../utils/constants.mjs';
-import { doesIdExist, iceCreamDataValidator } from '../../utils/middlewares.mjs';
+import { doesIdExist, handleValidationErrors, transformDataProperly, updateDataValidator } from '../../utils/middlewares.mjs';
+import { query, body, checkSchema, check } from 'express-validator';
+import { sortValidator } from '../../utils/queryValidator.mjs'
+import { newDataValidator, patchDataValidator } from '../../utils/bodyValidators.mjs'; 
 
 const router = Router();
 
 
-router.post('/api/products', iceCreamDataValidator, (req, res) => {
+router.post('/api/products', 
+    checkSchema(newDataValidator), 
+    handleValidationErrors, 
+    transformDataProperly,
+(req, res) => {
     let { body: {name, price} } = req;
 
     // append to 
@@ -13,7 +20,7 @@ router.post('/api/products', iceCreamDataValidator, (req, res) => {
     let new_data = {
         id: generated_id,
         name: name,
-        price: price
+        price: Number(price)
     };
     mock_products.push(new_data);
 
@@ -24,31 +31,31 @@ router.post('/api/products', iceCreamDataValidator, (req, res) => {
 });
 
 
-router.get('/api/products', (req, res) => {
+router.get('/api/products', 
+    checkSchema(sortValidator), 
+    handleValidationErrors, 
+(req, res) => {
     let { sort, order } = req.query;
 
-    if(sort){
-        switch(sort){
-            case 'price':
-                let priceSorted;
-                if (order == 'asc'){
-                    priceSorted = mock_products.sort((a, b) => {
-                        return a.price - b.price;
-                    });
-                } else{ // descending order
-                    priceSorted = mock_products.sort((a, b) => {
-                        return b.price - a.price;
-                    });
-                }
-                return res.status(200).send(priceSorted);
-                break;
-            default:
-                return res.status(200).send(`cant sort with ${sort}`);
-                break;
-        }
+    switch(sort){
+        case 'price':
+            let priceSorted;
+            if (order == 'asc'){
+                priceSorted = mock_products.sort((a, b) => {
+                    return a.price - b.price;
+                });
+            } else{ // descending order
+                priceSorted = mock_products.sort((a, b) => {
+                    return b.price - a.price;
+                });
+            }
+            return res.status(200).send(priceSorted);
+            break;
+        default:
+            return res.status(200).send(mock_products);
+            break;
     }
 
-    return res.status(200).send(mock_products);
 });
 
 
@@ -64,9 +71,35 @@ router.get('/api/products/:id', (req, res) => {
 });
 
 
-router.put('/api/products', doesIdExist, iceCreamDataValidator, (req, res) => {
+router.patch('/api/products', 
+    checkSchema(patchDataValidator),
+    handleValidationErrors,
+    doesIdExist,
+    transformDataProperly,
+(req, res) => {
+    let { foundIndex } = req.context;
     let { body } = req;
-    let { foundIndex, ...rest } = body;
+
+    let updated_data = mock_products[foundIndex] = {
+        ...mock_products[foundIndex],
+        ...body
+    }
+
+    return res.status(200).send({
+        message: "Successfully patched",
+        data: updated_data
+    });
+});
+
+
+router.put('/api/products', 
+    checkSchema(patchDataValidator), 
+    handleValidationErrors, 
+    doesIdExist, 
+    transformDataProperly,
+(req, res) => {
+    let { foundIndex } = req.context;
+    let { ...rest } = req.body;
     
     mock_products[foundIndex] = {
         ...rest
