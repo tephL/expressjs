@@ -90,7 +90,7 @@ export function cookieValidator(req, res, next){
     const { cookies, signedCookies } = req;
 
     //console.log(cookies);
-    console.log(signedCookies);
+    //  console.log(signedCookies);
 
     if(signedCookies.logged_in != "yes"){
         return res.status(403).send({

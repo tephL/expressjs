@@ -1,16 +1,75 @@
 import express from 'express';
 import router from './routers/products.mjs';
 import cookieParser from 'cookie-parser';
+import session from 'express-session';
 
 const app = express();
 app.use(express.json());
 app.use(cookieParser("nigga"));
+app.use(session({
+    secret: "Stephen",
+    saveUninitialized: true,
+    resave: false,
+    cookie: {
+        maxAge: (1000 * 10) * 6
+    }
+}));
 app.use(router);
 const PORT = 3000;
 
+app.post('/login', (req, res) => {
+    let username = req.body.username;
+
+    req.session.user = {
+        username: username
+    }
+
+    console.log(req.session);
+
+    return res.status(200).send({
+        message: `Successfully logged in as ${username}`
+    });
+});
+
+app.delete('/logout', (req, res) => {
+    const { username } = req.session.user;
+
+    req.session.destroy(err => {
+        if(err){
+            throw err;
+        }
+        return res.status(200).send({
+            message: `Successfully logged out ${username}`
+        });
+    });
+});
+
 app.get('/', (req, res)=>{
-    return res.status(200).cookie("logged_in", "yes", { signed: true, maxAge: 1000 * 10}).send({
+
+    console.log(req.session);
+    
+    return res.status(200).cookie("logged_in", "yes", { 
+        signed: true, 
+        maxAge: (1000 * 10) * 6
+    }).send({
         message: "Welcome to Ice Cream Shop"
+    });
+});
+
+app.post('/cart', (req, res) => {
+
+    console.log(req.session.id);
+    
+    if(req.session.items){
+        req.session.items += 1;
+    } else {
+        req.session.items = 1;
+    }
+    
+    console.log(req.session);
+
+    return res.status(200).send({
+        message: "Succesfully added to card"
     });
 });
 
