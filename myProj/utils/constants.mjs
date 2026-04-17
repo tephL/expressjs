@@ -4,3 +4,8 @@ export const mock_products = [
     {id:3, name:'Cookies And Cream Ice Cream', price:300},
     {id:4, name:'Double Dutch Cream', price:350},
 ]   
+
+export const mock_users = [
+    {id: 1, username: "tephL", password: "122806"},
+    {id: 2, username: "Suvi", password: "123123"}
+]

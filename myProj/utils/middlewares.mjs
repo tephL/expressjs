@@ -78,10 +78,11 @@ export function handleValidationErrors(req, res, next){
 export function transformDataProperly(req, res, next){
     const { id, name, price } = req.body;
 
-    // format price properly
+    // format id properly
     if(id) req.body.id = Number(id);
-    req.body.price = Number(price);
     
+    // format price properly
+    if(price) req.body.price = Number(price);
     next();
 }
 
