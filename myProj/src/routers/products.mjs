@@ -1,6 +1,6 @@
 import Router from 'express';
 import { mock_products } from '../../utils/constants.mjs';
-import { doesIdExist, handleValidationErrors, transformDataProperly, updateDataValidator } from '../../utils/middlewares.mjs';
+import { cookieValidator, doesIdExist, handleValidationErrors, transformDataProperly, updateDataValidator } from '../../utils/middlewares.mjs';
 import { query, body, checkSchema, check } from 'express-validator';
 import { sortValidator } from '../../utils/queryValidator.mjs'
 import { newDataValidator, patchDataValidator } from '../../utils/bodyValidators.mjs'; 
@@ -9,6 +9,7 @@ const router = Router();
 
 
 router.post('/api/products', 
+    cookieValidator,
     checkSchema(newDataValidator), 
     handleValidationErrors, 
     transformDataProperly,
@@ -33,6 +34,7 @@ router.post('/api/products',
 
 router.get('/api/products', 
     checkSchema(sortValidator), 
+    cookieValidator,
     handleValidationErrors, 
 (req, res) => {
     let { sort, order } = req.query;
@@ -59,8 +61,8 @@ router.get('/api/products',
 });
 
 
-router.get('/api/products/:id', (req, res) => {
-    console.log(`requesting: ${req.params.id}`);
+router.get('/api/products/:id', cookieValidator, (req, res) => {
+    // console.log(`requesting: ${req.params.id}`);
     let search_id = req.params.id;
 
     let found_product = mock_products.filter((product) => {
@@ -72,6 +74,7 @@ router.get('/api/products/:id', (req, res) => {
 
 
 router.patch('/api/products', 
+    cookieValidator,
     checkSchema(patchDataValidator),
     handleValidationErrors,
     doesIdExist,
@@ -92,7 +95,8 @@ router.patch('/api/products',
 });
 
 
-router.put('/api/products', 
+router.put('/api/products',
+    cookieValidator, 
     checkSchema(patchDataValidator), 
     handleValidationErrors, 
     doesIdExist, 

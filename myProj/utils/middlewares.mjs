@@ -1,7 +1,6 @@
 import { mock_products } from "./constants.mjs";
 import { validationResult } from "express-validator"; 
 
-
 // =============== DEPRECATED: used express-validator schema instead
 // export function newDataValidator(req, res, next){
 //     let { body: {name, price} } = req;
@@ -85,3 +84,19 @@ export function transformDataProperly(req, res, next){
     
     next();
 }
+
+
+export function cookieValidator(req, res, next){
+    const { cookies, signedCookies } = req;
+
+    //console.log(cookies);
+    console.log(signedCookies);
+
+    if(signedCookies.logged_in != "yes"){
+        return res.status(403).send({
+            message: "You have not logged in yet"
+        });
+    }
+
+    next();
+}   
