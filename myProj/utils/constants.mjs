@@ -6,6 +6,9 @@ export const mock_products = [
 ]   
 
 export const mock_users = [
-    {id: 1, username: "tephL", password: "122806"},
-    {id: 2, username: "Suvi", password: "123123"}
+    {id: 1, username: "tephL", password: "122806", role: "admin"},
+    {id: 2, username: "Suvi", password: "123123", role: "user"},
+    {id: 3, username: "Monchihhi", password: "123123", role: "user"},
+    {id: 4, username: "Ichi", password: "123123", role: "user"},
+    {id: 5, username: "Monke", password: "123123", role: "user"}
 ]

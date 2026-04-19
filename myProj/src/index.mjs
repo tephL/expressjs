@@ -2,8 +2,10 @@ import express from 'express';
 import router from './routers/products.mjs';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
+import passport from 'passport';
+import './strategies/userAuth.mjs';
 
-import { mock_users } from '../utils/constants.mjs';
+import { mock_products, mock_users } from '../utils/constants.mjs';
 
 const app = express();
 app.use(express.json());
@@ -13,9 +15,13 @@ app.use(session({
     saveUninitialized: true,
     resave: false,
     cookie: {
-        maxAge: (1000 * 10) * 600
+        maxAge: (1000 * 60) 
     }
 }));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(router);
 const PORT = 3000;
 
@@ -33,18 +39,7 @@ app.post('/login', (req, res) => {
     });
 });
 
-app.delete('/logout', (req, res) => {
-    const { username } = req.session.user;
 
-    req.session.destroy(err => {
-        if(err){
-            throw err;
-        }
-        return res.status(200).send({
-            message: `Successfully logged out ${username}`
-        });
-    });
-});
 
 app.get('/', (req, res)=>{
 
@@ -59,15 +54,12 @@ app.get('/', (req, res)=>{
 });
 
 app.post('/cart', (req, res) => {
+    let { item_id } = req.body;
 
-    console.log(req.session.id);
-    
-    if(req.session.items){
-        req.session.items += 1;
-    } else {
-        req.session.items = 1;
-    }
-    
+    let foundProduct = mock_products.find((product) => product.id == item_id);
+    if(!foundProduct) return res.status(400).send("Item doesn't exist.");
+
+    req.session.item = foundProduct.name;
     console.log(req.session);
 
     return res.status(200).send({
@@ -97,6 +89,45 @@ app.post('/auth/login', (req, res) => {
     console.log(req.session);
     return res.status(200).send({
         message: `Logged in as ${username}`
+    });
+});
+
+
+app.post('/api/auth', passport.authenticate("local"), (req, res) => {
+    console.log(req.session);
+    res.sendStatus(200);
+});
+
+
+app.post('/api/logout', (req, res) => {
+    console.log("logging out");
+    req.logout((err) => {
+        try{
+            if(err) throw new Error("U aint logged in"); 
+            return res.status(200).send("Logged out");
+        }catch(err2){
+            return res.send(err2);
+        }
+    });
+});
+
+
+app.get('/api/auth/status', (req, res) => {
+    console.log(req.user);
+    console.log(req.session);
+    return res.sendStatus(200);
+});
+
+
+app.get('/api/admin', (req, res) => {
+    if(!req.user) return res.sendStatus(403);
+
+    let {user} = req;
+    console.log(user);
+    if(user.role !== "admin") return res.sendStatus(403);
+
+    return res.status(200).send({
+        message: "Admin"
     });
 });
 
