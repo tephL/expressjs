@@ -5,6 +5,9 @@ import session from 'express-session';
 import passport from 'passport';
 import './strategies/userAuth.mjs';
 
+// database
+import { users, products } from '../database/models.mjs';
+
 import { mock_products, mock_users } from '../utils/constants.mjs';
 
 const app = express();
@@ -129,6 +132,18 @@ app.get('/api/admin', (req, res) => {
     return res.status(200).send({
         message: "Admin"
     });
+});
+
+
+app.get('/accounts', async (req, res) => {
+    let findUser = await users.findAll({
+        where: { username : req.body.username },
+        raw: true
+    });
+
+    let publicUsers = findUser.map(({username, display_name}) => ({username, display_name}) );
+    
+    return res.status(200).send(publicUsers);
 });
 
 

@@ -4,20 +4,22 @@ import Strategy from 'passport-local';
 
 // Model
 import { mock_users } from '../../utils/constants.mjs';
+import {users, products} from '../../database/models.mjs';
 
 
 export default passport.use(
-    new Strategy((username, password, done) => {
+    new Strategy(async (username, password, done) => {
         try{
             // username lookup
-            let foundUser = mock_users.find((user) => user.username == username);
-            if(!foundUser) throw new Error("Username not found.");
-            
+            let foundUsername = await users.findOne({
+                where: { username : username },
+                raw: true 
+            });
+            if(!foundUsername) throw new Error("Username not found.");
+
             // password auth
-            let correctPassword = foundUser.password === password;
-            if(!correctPassword) throw new Error("Incorrect credentials");
-            
-            done(null, foundUser.id);
+            if(foundUsername.password !== password) throw new Error("Invalid credentials");
+            done(null, foundUsername.user_id);
         }catch(err){
             done(err, null);
         }
@@ -25,19 +27,19 @@ export default passport.use(
 );
 
 
-passport.serializeUser((id, done) => {
+passport.serializeUser((user_id, done) => {
     console.log("serializing...");
-    done(null, id);
+    done(null, user_id);
 });
 
 
-passport.deserializeUser((id, done) => {
-    console.log(`Deserializing user: ${id}`);
+passport.deserializeUser(async (user_id, done) => {
+    console.log(`Deserializing user: ${user_id}`);
     try{
         // id exists
-        let findUser = mock_users.find((user) => user.id == id);
-        if(!findUser) throw new Error("User doesn't exist.");
-        done(null, findUser);
+        const findById = await users.findByPk(user_id, {raw: true});
+        console.log(findById);
+        done(null, findById);
     }catch(err){
         done(err, null);
     }
