@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 import sequelize from "./db.mjs";
 
-export const users = sequelize.define('users', {
+export const Users = sequelize.define('users', {
     user_id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -24,7 +24,7 @@ export const users = sequelize.define('users', {
     timestamps: false
 });
 
-export const products = sequelize.define('products', {
+export const Products = sequelize.define('Products', {
     product_id: {
         type: DataTypes.INTEGER,
         primaryKey: true,

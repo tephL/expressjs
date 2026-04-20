@@ -1,25 +1,27 @@
 // Dependencies
 import passport from 'passport';
 import Strategy from 'passport-local';
-
 // Model
-import { mock_users } from '../../utils/constants.mjs';
-import {users, products} from '../../database/models.mjs';
+import {Users, Products} from '../../database/models.mjs';
+// Hash
+import { validatePassword } from '../../utils/helpers.mjs';
 
 
 export default passport.use(
     new Strategy(async (username, password, done) => {
         try{
             // username lookup
-            let foundUsername = await users.findOne({
+            let foundUser = await Users.findOne({
                 where: { username : username },
                 raw: true 
             });
-            if(!foundUsername) throw new Error("Username not found.");
+            if(!foundUser) throw new Error("Username not found.");
 
             // password auth
-            if(foundUsername.password !== password) throw new Error("Invalid credentials");
-            done(null, foundUsername.user_id);
+            const passwordMatched = validatePassword(password, foundUser.password);
+            if(!passwordMatched) throw new Error("Invalid credentials");
+
+            done(null, foundUser.user_id);
         }catch(err){
             done(err, null);
         }
@@ -37,7 +39,7 @@ passport.deserializeUser(async (user_id, done) => {
     console.log(`Deserializing user: ${user_id}`);
     try{
         // id exists
-        const findById = await users.findByPk(user_id, {raw: true});
+        const findById = await Users.findByPk(user_id, {raw: true});
         console.log(findById);
         done(null, findById);
     }catch(err){
