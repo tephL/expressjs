@@ -30,7 +30,7 @@ app.use(session({
     resave: false,
     store: sessionStore,
     cookie: {
-        maxAge: (1000 * 60) 
+        maxAge: (1000 * 20) 
     }
 }));
 
@@ -80,6 +80,21 @@ app.post('/cart', (req, res) => {
 
     return res.status(200).send({
         message: "Succesfully added to card"
+    });
+});
+
+
+export function addNums(a, b){
+    return a + b;
+}
+
+
+app.post('/sum', (req, res) => {
+    let { a, b } = req.body;
+    let sum = Number(a) + Number(b);
+    
+    return res.status(200).send({
+        sum: sum
     });
 });
 
